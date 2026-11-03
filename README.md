@@ -134,9 +134,15 @@ permission only in the publication job.
 ## Reuse this template
 
 Create your repository with GitHub's **Use this template**. Rename `myproject`
-consistently in CMake targets, C++ namespaces, headers, the Python package,
-examples and tests; update the distribution name and metadata in
-`pyproject.toml`, the README repository URL, and release version checks.
+consistently using:
+
+```sh
+python script/init_project.py --name pointcloud --distribution pointcloud-tools
+```
+
+This updates CMake targets, C++ namespaces, headers, the Python package,
+distribution metadata, examples and tests. Review the README repository URL
+and project metadata afterwards. CI also builds and tests a renamed template.
 Add kernels to `src/` and their bindings to `myproject/_core/`; keep Python
 orchestration in the package. Keep OpenMP runtime repair and installed-consumer
 tests when replacing the example with your own parallel code.

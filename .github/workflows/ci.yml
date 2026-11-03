@@ -94,6 +94,12 @@ jobs:
           cd /tmp
           OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE python -m pytest --pyargs myproject.tests
           python "$GITHUB_WORKSPACE/examples/python/assign_points.py" --samples 1000 --threads 2
+      - name: Verify initialized template
+        run: |
+          python unpacked/script/init_project.py --name renamed_demo --distribution renamed-demo
+          python -m pip install ./unpacked
+          cd /tmp
+          OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE python -m pytest --pyargs renamed_demo.tests
       - uses: actions/upload-artifact@v4
         with:
           name: sdist
