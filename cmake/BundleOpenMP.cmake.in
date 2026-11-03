@@ -1,0 +1,30 @@
+# Bundle only OpenMP; leave system C/C++ runtimes to the platform.
+set(_lib "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/@CMAKE_INSTALL_LIBDIR@/@CMAKE_SHARED_LIBRARY_PREFIX@myproject@CMAKE_SHARED_LIBRARY_SUFFIX@")
+if(WIN32)
+    set(_lib "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/@CMAKE_INSTALL_BINDIR@/myproject.dll")
+    set(_dest "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/@CMAKE_INSTALL_BINDIR@")
+else()
+    set(_dest "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/@CMAKE_INSTALL_LIBDIR@")
+endif()
+file(GET_RUNTIME_DEPENDENCIES LIBRARIES "${_lib}"
+    DIRECTORIES @_omp_redist@
+    RESOLVED_DEPENDENCIES_VAR _resolved
+    UNRESOLVED_DEPENDENCIES_VAR _unresolved
+    PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*"
+    POST_INCLUDE_REGEXES ".*[/\\\\](libgomp[^/\\\\]*|libomp[^/\\\\]*|vcomp[0-9]+\\.dll)$"
+    POST_EXCLUDE_REGEXES ".*")
+set(_count 0)
+foreach(_runtime IN LISTS _resolved)
+    get_filename_component(_name "${_runtime}" NAME)
+    if(_name MATCHES "^(libgomp|libomp|vcomp)")
+        file(INSTALL "${_runtime}" DESTINATION "${_dest}" FOLLOW_SYMLINK_CHAIN)
+        math(EXPR _count "${_count}+1")
+        if(APPLE)
+            execute_process(COMMAND install_name_tool -change "${_runtime}"
+                "@loader_path/${_name}" "${_lib}" COMMAND_ERROR_IS_FATAL ANY)
+        endif()
+    endif()
+endforeach()
+if(NOT _count EQUAL 1)
+    message(FATAL_ERROR "Expected one OpenMP runtime, found ${_count}; unresolved: ${_unresolved}")
+endif()

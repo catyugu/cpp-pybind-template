@@ -1,0 +1,53 @@
+[build-system]
+requires = ["scikit-build-core>=0.11,<2", "pybind11>=3.0,<4"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "cpp-pybind-template"
+version = "0.1.0"
+description = "C++17, pybind11 and OpenMP mixed-project template"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE", "licenses/*"]
+dependencies = ["numpy>=1.23"]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.scikit-build]
+minimum-version = "build-system.requires"
+cmake.version = ">=3.26"
+wheel.packages = ["myproject"]
+sdist.exclude = [".git", "build*", "dist", "wheelhouse"]
+wheel.exclude = ["**/*.cpp"]
+
+[tool.scikit-build.cmake.define]
+MYPROJECT_BUILD_PYTHON = "ON"
+MYPROJECT_BUILD_TESTS = "OFF"
+MYPROJECT_BUILD_EXAMPLES = "OFF"
+MYPROJECT_INSTALL_SDK = "OFF"
+BUILD_SHARED_LIBS = "OFF"
+
+[tool.pytest.ini_options]
+testpaths = ["myproject/tests"]
+
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+skip = "*-musllinux* *-win32 *-manylinux_i686"
+test-requires = ["pytest>=8"]
+test-command = "python -m pytest --import-mode=importlib {project}/myproject/tests"
+test-environment = { OMP_NUM_THREADS = "2", OMP_DYNAMIC = "FALSE", MYPROJECT_TEST_BUNDLED = "1" }
+build-verbosity = 1
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux_2_28"
+manylinux-aarch64-image = "manylinux_2_28"
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.macos]
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0" }
+repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+
+[tool.cibuildwheel.windows]
+repair-wheel-command = "delvewheel repair -w {dest_dir} -v {wheel}"

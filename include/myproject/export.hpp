@@ -20,3 +20,4 @@
 #else
 #define MYPROJECT_API
 #endif
+

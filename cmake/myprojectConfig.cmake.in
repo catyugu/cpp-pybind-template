@@ -1,8 +1,8 @@
 @PACKAGE_INIT@
-
-include(CMakeFindDependencyMacro)
-@MYPROJECT_PACKAGE_DEPENDENCIES@
-
+if(NOT @BUILD_SHARED_LIBS@)
+    include("${CMAKE_CURRENT_LIST_DIR}/myprojectOpenMP.cmake")
+    include(CMakeFindDependencyMacro)
+    find_dependency(OpenMP COMPONENTS CXX)
+endif()
 include("${CMAKE_CURRENT_LIST_DIR}/myprojectTargets.cmake")
-
 check_required_components(myproject)

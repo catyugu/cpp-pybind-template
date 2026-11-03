@@ -1,206 +1,90 @@
 cmake_minimum_required(VERSION 3.26)
-
-# 同一份源码经两条路径被引入时（两个子项目各自 add_subdirectory 本仓库），目标会被重复定义；
-# 已在构建树里就退出，让后一处复用已有目标。
 if(TARGET myproject::myproject)
     return()
 endif()
-
-# 默认项目名称，会被 Python 脚本替换。C 是有意保留的：模板同样适用于含 C 源码的项目
-project(MyProject LANGUAGES CXX C)
-
-# 版本放在项目作用域变量里，不用 project(VERSION)：后者会把 CMAKE_PROJECT_VERSION{,_MAJOR,_MINOR,_PATCH,_TWEAK}
-# 写进 cache，父项目若自己不声明版本，就会在自己的作用域里读到本库的版本
-set(MYPROJECT_VERSION_MAJOR 0)
-set(MYPROJECT_VERSION_MINOR 1)
-set(MYPROJECT_VERSION_PATCH 0)
-set(MYPROJECT_VERSION "${MYPROJECT_VERSION_MAJOR}.${MYPROJECT_VERSION_MINOR}.${MYPROJECT_VERSION_PATCH}")
-
-# Pre-1.0 minor releases may break ABI; after 1.0 the major is the ABI boundary.
-# Keep the ELF/Mach-O SONAME and find_package version policy consistent.
-if(MYPROJECT_VERSION_MAJOR EQUAL 0)
-    set(MYPROJECT_ABI_VERSION "${MYPROJECT_VERSION_MAJOR}.${MYPROJECT_VERSION_MINOR}")
-    set(MYPROJECT_VERSION_COMPATIBILITY SameMinorVersion)
-else()
-    set(MYPROJECT_ABI_VERSION "${MYPROJECT_VERSION_MAJOR}")
-    set(MYPROJECT_VERSION_COMPATIBILITY SameMajorVersion)
-endif()
-
-# An intentionally explicit C++20 baseline for this project template.
-# These directory-scoped defaults do not overwrite a parent's own settings.
-set(CMAKE_CXX_STANDARD 20)
+project(myproject VERSION 0.1.0 LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
-
-# 构建策略属于构建的所有者：作为子项目时由父项目决定构建类型、并行度等
-if(PROJECT_IS_TOP_LEVEL)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-    # 多配置生成器（Visual Studio / Xcode / Ninja Multi-Config）里 CMAKE_BUILD_TYPE 不是 cache
-    # 变量，对它的 CACHE 操作会让 configure 直接失败
-    if(NOT CMAKE_CONFIGURATION_TYPES)
-        if(NOT CMAKE_BUILD_TYPE)
-            set(CMAKE_BUILD_TYPE Debug CACHE STRING "Choose the type of build." FORCE)
-        endif()
-        set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Debug Release RelWithDebInfo MinSizeRel)
-        message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
-    else()
-        message(STATUS "Multi-config generator: ${CMAKE_CONFIGURATION_TYPES}")
-    endif()
+if(PROJECT_IS_TOP_LEVEL AND NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build configuration" FORCE)
 endif()
-
-# 独立构建默认全开；作为子项目时默认只构建库目标
-option(MYPROJECT_BUILD_EXAMPLES "build examples" ${PROJECT_IS_TOP_LEVEL})
-option(MYPROJECT_BUILD_TESTS "build tests" ${PROJECT_IS_TOP_LEVEL})
-option(MYPROJECT_BUILD_TOOLS "build tools" ${PROJECT_IS_TOP_LEVEL})
-option(MYPROJECT_WERROR "treat warnings in this project as errors" ${PROJECT_IS_TOP_LEVEL})
-option(MYPROJECT_INSTALL "install library and CMake package" ${PROJECT_IS_TOP_LEVEL})
-
-# 安装布局变量（CMAKE_INSTALL_LIBDIR 等）必须在第一次使用 ${CMAKE_INSTALL_*} 之前 include：
-# 变量在命令执行时展开，否则 $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}> 只在某个依赖
-# 恰好先 include 它时才非空，依赖一变导出目标就静默丢掉 include 目录
+option(MYPROJECT_BUILD_PYTHON "Build the pybind11 extension" ${SKBUILD})
+option(MYPROJECT_BUILD_TESTS "Build C++ tests" ${PROJECT_IS_TOP_LEVEL})
+option(MYPROJECT_BUILD_EXAMPLES "Build the C++ example" ${PROJECT_IS_TOP_LEVEL})
+option(MYPROJECT_INSTALL_SDK "Install the C++ SDK" ON)
+option(MYPROJECT_BUNDLE_OPENMP "Bundle the shared SDK's OpenMP runtime" OFF)
+if(MYPROJECT_BUNDLE_OPENMP AND NOT BUILD_SHARED_LIBS)
+    message(FATAL_ERROR "Runtime bundling requires BUILD_SHARED_LIBS=ON")
+endif()
 include(GNUInstallDirs)
-
-# 生成的头文件位于构建目录，但保持与安装后一致的 include 布局
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/config.h.in ${PROJECT_BINARY_DIR}/include/myproject/config.h)
-
-include(cmake/myprojectOptions.cmake)
-
-# Automatically discover new source and header files on reconfiguration.
-# The extensions are the ones a C++ library realistically adds; an unusual one
-# (.m, .mm, .ixx, ...) is a deliberate change of project policy, not a glob gap.
-file(GLOB_RECURSE MYPROJECT_SOURCES CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/src/*.c"
-    "${PROJECT_SOURCE_DIR}/src/*.cc"
-    "${PROJECT_SOURCE_DIR}/src/*.cpp"
-    "${PROJECT_SOURCE_DIR}/src/*.cxx"
-    "${PROJECT_SOURCE_DIR}/src/*.c++"
-)
-file(GLOB_RECURSE MYPROJECT_HEADERS CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/include/*.h"
-    "${PROJECT_SOURCE_DIR}/include/*.hpp"
-    "${PROJECT_SOURCE_DIR}/include/*.hxx"
-    "${PROJECT_SOURCE_DIR}/include/*.inl"
-    "${PROJECT_SOURCE_DIR}/include/*.ipp"
-    "${PROJECT_SOURCE_DIR}/include/*.tpp"
-)
-file(GLOB_RECURSE MYPROJECT_PRIVATE_HEADERS CONFIGURE_DEPENDS
-    "${PROJECT_SOURCE_DIR}/src/*.h"
-    "${PROJECT_SOURCE_DIR}/src/*.hpp"
-    "${PROJECT_SOURCE_DIR}/src/*.hxx"
-    "${PROJECT_SOURCE_DIR}/src/*.inl"
-    "${PROJECT_SOURCE_DIR}/src/*.ipp"
-    "${PROJECT_SOURCE_DIR}/src/*.tpp"
-)
-
-add_library(myproject ${MYPROJECT_SOURCES} ${MYPROJECT_HEADERS} ${MYPROJECT_PRIVATE_HEADERS})
+include(cmake/myprojectOpenMP.cmake)
+find_package(OpenMP REQUIRED COMPONENTS CXX)
+add_library(myproject src/distances.cpp)
 add_library(myproject::myproject ALIAS myproject)
-
-include(cmake/Dependencies.cmake)
-
+target_compile_features(myproject PUBLIC cxx_std_17)
 target_include_directories(myproject PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-    PRIVATE
-    "${PROJECT_SOURCE_DIR}/src"
-)
-target_link_libraries(myproject PRIVATE
-    $<BUILD_INTERFACE:myproject_options>
-)
-
-# C++20 是 myproject 向使用方发布的唯一要求
-target_compile_features(myproject PUBLIC cxx_std_20)
-
-# VERSION/SOVERSION apply to shared libraries only. Before 1.0, the minor
-# version is the ABI boundary; using just SOVERSION=0 would be incorrect.
-# 可见性属性让共享库默认隐藏符号：ELF/Mach-O 的默认是全部导出（连内部实现一起进动态符号表），
-# 因此公开接口上的每个类型/函数都必须带 MYPROJECT_API（见 include/myproject/export.hpp）
-set_target_properties(myproject PROPERTIES
-    POSITION_INDEPENDENT_CODE ON
-    CXX_VISIBILITY_PRESET hidden
-    VISIBILITY_INLINES_HIDDEN ON
-    DEBUG_POSTFIX "d"
-    VERSION ${MYPROJECT_VERSION}
-    SOVERSION ${MYPROJECT_ABI_VERSION}
-)
-
-if(BUILD_SHARED_LIBS)
-    target_compile_definitions(myproject
-        PRIVATE MYPROJECT_EXPORTS
-        PUBLIC MYPROJECT_SHARED
-    )
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
+target_link_libraries(myproject PRIVATE OpenMP::OpenMP_CXX)
+set_target_properties(myproject PROPERTIES POSITION_INDEPENDENT_CODE ON
+    CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON
+    VERSION ${PROJECT_VERSION} SOVERSION 0.1)
+if(MSVC)
+    target_compile_options(myproject PRIVATE /W4 /permissive- /utf-8)
+else()
+    target_compile_options(myproject PRIVATE -Wall -Wextra -Wpedantic)
 endif()
-
-# 把目标的运行时 DLL 拷到它自己所在目录，保证构建树里可直接运行、ctest 能找到。
-# $<TARGET_RUNTIME_DLLS:> 在非 DLL 平台恒为空，所以不需要平台或 BUILD_SHARED_LIBS 判断
-function(myproject_stage_runtime target)
-    add_custom_command(TARGET ${target} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:${target}> $<TARGET_RUNTIME_DLLS:${target}>
-        COMMAND_EXPAND_LISTS
-    )
-endfunction()
-
-if(MYPROJECT_INSTALL)
+if(BUILD_SHARED_LIBS)
+    target_compile_definitions(myproject PRIVATE MYPROJECT_EXPORTS PUBLIC MYPROJECT_SHARED)
+endif()
+if(APPLE)
+    set_target_properties(myproject PROPERTIES INSTALL_RPATH "@loader_path")
+elseif(UNIX)
+    set_target_properties(myproject PROPERTIES INSTALL_RPATH "$ORIGIN")
+endif()
+if(MYPROJECT_BUILD_PYTHON)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    find_package(pybind11 3.0 CONFIG REQUIRED)
+    pybind11_add_module(_core myproject/_core/bindings.cpp)
+    target_link_libraries(_core PRIVATE myproject::myproject)
+    install(TARGETS _core LIBRARY DESTINATION myproject RUNTIME DESTINATION myproject)
+endif()
+if(MYPROJECT_INSTALL_SDK)
     install(TARGETS myproject EXPORT myprojectTargets
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    )
-
-    # include/ only holds public files, so the whole tree is installed: a header
-    # that pulls in a .inl/.ipp/.tpp companion cannot be shipped half-installed.
-    install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    )
-    install(FILES "${PROJECT_BINARY_DIR}/include/myproject/config.h"
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/myproject
-    )
-
-    # 许可证随安装产物分发；CMAKE_INSTALL_DOCDIR 由 GNUInstallDirs 按项目名给出
-    install(FILES "${PROJECT_SOURCE_DIR}/LICENSE"
-        DESTINATION ${CMAKE_INSTALL_DOCDIR}
-    )
-
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/myproject)
     include(CMakePackageConfigHelpers)
-
-    install(EXPORT myprojectTargets
-        FILE myprojectTargets.cmake
-        NAMESPACE myproject::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject
-    )
-
-    configure_package_config_file(
-        "${PROJECT_SOURCE_DIR}/cmake/myprojectConfig.cmake.in"
-        "${PROJECT_BINARY_DIR}/myprojectConfig.cmake"
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject
-    )
-    # Apply the same compatibility boundary used by SOVERSION.
-    write_basic_package_version_file(
-        "${PROJECT_BINARY_DIR}/myprojectConfigVersion.cmake"
-        VERSION ${MYPROJECT_VERSION}
-        COMPATIBILITY ${MYPROJECT_VERSION_COMPATIBILITY}
-    )
-    install(FILES
-        "${PROJECT_BINARY_DIR}/myprojectConfig.cmake"
-        "${PROJECT_BINARY_DIR}/myprojectConfigVersion.cmake"
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject
-    )
-endif()
-
-if(MYPROJECT_BUILD_EXAMPLES)
-    add_subdirectory(examples)
-endif()
-
-if(MYPROJECT_BUILD_TESTS)
-    # 只有顶层项目负责开启 CTest；作为子项目时由父项目决定
-    if(PROJECT_IS_TOP_LEVEL)
-        enable_testing()
+    configure_package_config_file(cmake/myprojectConfig.cmake.in
+        ${PROJECT_BINARY_DIR}/myprojectConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject)
+    write_basic_package_version_file(${PROJECT_BINARY_DIR}/myprojectConfigVersion.cmake
+        VERSION ${PROJECT_VERSION} COMPATIBILITY SameMinorVersion)
+    install(EXPORT myprojectTargets NAMESPACE myproject::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject)
+    install(FILES ${PROJECT_BINARY_DIR}/myprojectConfig.cmake
+        ${PROJECT_BINARY_DIR}/myprojectConfigVersion.cmake
+        cmake/myprojectOpenMP.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject)
+    install(DIRECTORY licenses/ DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/myproject)
+    if(MYPROJECT_BUNDLE_OPENMP)
+        file(GLOB _omp_redist "$ENV{VCToolsRedistDir}/x64/Microsoft.VC*.OpenMP")
+        configure_file(cmake/BundleOpenMP.cmake.in ${PROJECT_BINARY_DIR}/BundleOpenMP.cmake @ONLY)
+        install(SCRIPT ${PROJECT_BINARY_DIR}/BundleOpenMP.cmake)
     endif()
-    add_subdirectory(tests)
 endif()
-
-if(MYPROJECT_BUILD_TOOLS)
-    add_subdirectory(tools)
+if(MYPROJECT_BUILD_EXAMPLES)
+    add_executable(myproject_example examples/cpp/main.cpp)
+    target_link_libraries(myproject_example PRIVATE myproject::myproject)
+endif()
+if(MYPROJECT_BUILD_TESTS)
+    enable_testing()
+    add_executable(test_distances tests/test_distances.cpp)
+    target_link_libraries(test_distances PRIVATE myproject::myproject)
+    add_test(NAME distances COMMAND test_distances)
+    set_tests_properties(distances PROPERTIES ENVIRONMENT "OMP_NUM_THREADS=2;OMP_DYNAMIC=FALSE")
 endif()
