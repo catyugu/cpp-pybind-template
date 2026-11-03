@@ -57,7 +57,7 @@ def test_import_order():
     for imports in ["import numpy; import myproject", "import myproject; import numpy"]:
         subprocess.run([sys.executable, "-c", imports +
                         "; assert myproject.thread_info(threads=2)['parallel_threads'] == 2"],
-                       check=True, cwd=Path(sys.executable).parent)
+                       check=True, cwd=Path(sys.executable).parent, timeout=60)
 
 
 @pytest.mark.skipif(not os.environ.get("MYPROJECT_TEST_BUNDLED"), reason="repaired-wheel check")

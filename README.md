@@ -45,7 +45,7 @@ pybind11). The C++-only build does not need Python, pybind11 or NumPy.
 
 ```sh
 python -m pip install -e '.[test]'
-python -m pytest --import-mode=importlib myproject/tests
+python -m pytest --pyargs myproject.tests
 python examples/python/assign_points.py --threads 2
 ```
 

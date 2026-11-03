@@ -44,6 +44,11 @@ def main():
     run("cmake", "-S", ROOT / ".github/scripts/consumer", "-B", consumer,
         f"-DCMAKE_PREFIX_PATH={sdk}", f"-DCMAKE_BUILD_TYPE={args.config}", env=env)
     run("cmake", "--build", consumer, "--config", args.config, env=env)
+    if os.name == "nt" and not args.static:
+        exe_dir = consumer / args.config if (consumer / args.config).is_dir() else consumer
+        for dll in (sdk / "bin").glob("*.dll"):
+            shutil.copy2(dll, exe_dir)
+        env["MYPROJECT_CHECK_BUNDLED"] = "1"
     run("ctest", "--test-dir", consumer, "-C", args.config, "--output-on-failure", env=env)
     if not args.static:
         runtimes = [p for p in sdk.rglob("*") if p.name.lower().startswith(("libgomp", "libomp", "vcomp"))]
