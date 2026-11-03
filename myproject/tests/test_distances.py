@@ -63,7 +63,8 @@ def test_import_order():
 @pytest.mark.skipif(not os.environ.get("MYPROJECT_TEST_BUNDLED"), reason="repaired-wheel check")
 def test_runtime_is_in_distribution():
     root = Path(myproject.__file__).parent.parent
-    runtimes = [p for p in root.rglob("*") if p.is_file() and
+    candidates = [Path(myproject.__file__).parent, root / "cpp_pybind_template.libs"]
+    runtimes = [p for directory in candidates for p in directory.rglob("*") if p.is_file() and
                 p.name.lower().startswith(("libgomp", "libomp", "vcomp")) and
                 any(ext in p.name for ext in (".so", ".dylib", ".dll"))]
     assert runtimes, "repaired wheel is missing its OpenMP runtime"

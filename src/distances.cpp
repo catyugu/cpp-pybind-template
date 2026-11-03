@@ -17,8 +17,11 @@ int parallel_threads(int threads) {
     check_threads(threads);
     int observed = 1;
     const int requested = threads ? threads : max_threads();
-#pragma omp parallel num_threads(requested) reduction(max:observed)
-    { observed = omp_get_num_threads(); }
+#pragma omp parallel num_threads(requested)
+    {
+#pragma omp single
+        observed = omp_get_num_threads();
+    }
     return observed;
 }
 void pairwise_squared_distances(const double* samples, std::size_t rows,

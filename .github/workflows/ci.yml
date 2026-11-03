@@ -92,7 +92,7 @@ jobs:
           tar -xf dist/*.tar.gz -C unpacked --strip-components=1
           python -m pip install ./unpacked
           cd /tmp
-          OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE python -m pytest --import-mode=importlib "$GITHUB_WORKSPACE/myproject/tests"
+          OMP_NUM_THREADS=2 OMP_DYNAMIC=FALSE python -m pytest --pyargs myproject.tests
           python "$GITHUB_WORKSPACE/examples/python/assign_points.py" --samples 1000 --threads 2
       - uses: actions/upload-artifact@v4
         with:
