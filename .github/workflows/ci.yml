@@ -108,7 +108,11 @@ jobs:
   release:
     name: Publish verified artifacts
     needs: [sdk, static, wheels, source]
-    if: startsWith(github.ref, 'refs/tags/v')
+    # The initial-release commit creates its tag only after the full matrix
+    # succeeds. Subsequent versions use ordinary tag pushes.
+    if: >-
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.ref == 'refs/heads/main' && github.event.head_commit.message == 'Release v0.1.0')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -119,8 +123,17 @@ jobs:
         with:
           path: dist
           merge-multiple: true
+      - name: Create the initial tag after successful CI
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git tag v0.1.0
+          git push origin refs/tags/v0.1.0
       - name: Validate version and publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python .github/scripts/release.py
+          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
+            python .github/scripts/release.py --tag v0.1.0
+          else
+            python .github/scripts/release.py
+          fi
