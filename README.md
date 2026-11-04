@@ -66,7 +66,7 @@ cmake --install build --config Release --prefix install
 project consumes the installed SDK:
 
 ```cmake
-find_package(myproject 0.1 CONFIG REQUIRED)
+find_package(myproject 0.2 CONFIG REQUIRED)
 add_executable(app main.cpp)
 target_link_libraries(app PRIVATE myproject::myproject)
 ```
@@ -124,10 +124,11 @@ build tree, compile an independent `find_package` consumer and run it. Separate
 Debug jobs check static package exports with the minimum supported CMake.
 The source distribution is unpacked, built, installed and tested separately.
 
-To release, update the versions in `CMakeLists.txt` and `pyproject.toml`, wait
-for main CI to pass, then push the matching `vX.Y.Z` tag on a main commit. The
-tag pipeline repeats verification, checks version consistency and main ancestry,
-and publishes version notes to GitHub Releases after every build/test job succeeds.
+To release, update the project version, ABI version and consumer examples,
+then push a main commit named `Release vX.Y.Z`. After every build/test job
+succeeds, CI checks version consistency and main ancestry, creates the matching
+tag and publishes version notes. Pushing a matching `vX.Y.Z` tag on a main
+commit also runs the same verification and publication flow.
 This template does not upload wheels, SDKs or source distributions as CI or
 Release assets, and does not publish to PyPI. Build outputs stay within the CI
 jobs that test them. GitHub supplies its usual source-code downloads for tags.

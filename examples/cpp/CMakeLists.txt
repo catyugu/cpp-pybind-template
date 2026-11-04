@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
 project(myproject_example LANGUAGES CXX)
-find_package(myproject 0.1 CONFIG REQUIRED)
+find_package(myproject 0.2 CONFIG REQUIRED)
 add_executable(example main.cpp)
 target_link_libraries(example PRIVATE myproject::myproject)

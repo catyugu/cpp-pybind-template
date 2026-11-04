@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26)
 if(TARGET myproject::myproject)
     return()
 endif()
-project(myproject VERSION 0.1.0 LANGUAGES CXX)
+project(myproject VERSION 0.2.0 LANGUAGES CXX)
 if(NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -32,7 +32,7 @@ target_include_directories(myproject PUBLIC
 target_link_libraries(myproject PRIVATE OpenMP::OpenMP_CXX)
 set_target_properties(myproject PROPERTIES POSITION_INDEPENDENT_CODE ON
     CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN ON
-    VERSION ${PROJECT_VERSION} SOVERSION 0.1)
+    VERSION ${PROJECT_VERSION} SOVERSION 0.2)
 if(MSVC)
     target_compile_options(myproject PRIVATE /W4 /permissive- /utf-8)
 else()

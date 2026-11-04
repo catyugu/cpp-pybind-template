@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(sdk_consumer LANGUAGES CXX)
-find_package(myproject 0.1 CONFIG REQUIRED)
+find_package(myproject 0.2 CONFIG REQUIRED)
 add_executable(consumer main.cpp)
 target_link_libraries(consumer PRIVATE myproject::myproject)
 set_target_properties(consumer PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS OFF)
