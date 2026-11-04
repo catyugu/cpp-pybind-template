@@ -1,4 +1,4 @@
-"""Build, relocate and consume the exact SDK tree that will be archived."""
+"""Build, export, relocate and consume the SDK in CI."""
 import argparse
 import os
 from pathlib import Path
@@ -54,9 +54,6 @@ def main():
         runtimes = [p for p in sdk.rglob("*") if p.name.lower().startswith(("libgomp", "libomp", "vcomp"))]
         if not runtimes:
             raise RuntimeError("SDK has no bundled OpenMP runtime")
-        dist = ROOT / "dist"
-        dist.mkdir(exist_ok=True)
-        shutil.make_archive(str(dist / sdk.name), "zip", sdk.parent, sdk.name)
 
 
 if __name__ == "__main__":

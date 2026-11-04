@@ -1,0 +1,19 @@
+name: Remove template release assets
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/cleanup-release-assets.yml]
+permissions:
+  contents: write
+jobs:
+  cleanup:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Remove uploaded assets from the initial template release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          while IFS= read -r asset; do
+            gh release delete-asset v0.1.0 "$asset" --yes
+          done < <(gh release view v0.1.0 --json assets --jq '.assets[].name')

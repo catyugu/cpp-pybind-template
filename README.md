@@ -9,10 +9,10 @@ and summarizes assignments. The extension releases the GIL during computation.
 
 ## Install and run
 
-Download the wheel matching your Python and platform from [Releases](https://github.com/catyugu/cpp-pybind-template/releases).
+Clone this template, install the build prerequisites below, then run:
 
 ```sh
-python -m pip install path/to/cpp_pybind_template-0.1.0-<python>-<abi>-<platform>.whl
+python -m pip install .
 python examples/python/assign_points.py --samples 100000 --threads 2
 ```
 
@@ -25,8 +25,8 @@ print(counts)      # [2 1]
 print(thread_info(threads=2))  # observed parallel_threads: 2
 ```
 
-Wheels carry their OpenMP runtime. Installing a published wheel requires Python
-and pip; NumPy is installed as a dependency. No compiler is needed. `threads=0`
+CI verifies that repaired wheels carry their OpenMP runtime and can be installed
+and consumed from an isolated environment. NumPy is a package dependency. `threads=0`
 uses the OpenMP environment, including `OMP_NUM_THREADS`; positive values choose
 a team size for that call without changing global runtime settings. Set
 `OMP_DYNAMIC=FALSE` when requiring an exact team size. Avoid mutating input
@@ -50,7 +50,7 @@ python examples/python/assign_points.py --threads 2
 ```
 
 The local editable build links your development machine's OpenMP runtime.
-Redistributable wheels are repaired by the release pipeline. Linux wheel
+Redistributable wheels are built, repaired and consumed within CI. Linux wheel
 containers run only in GitHub Actions; local builds do not require Docker.
 
 ## C++ SDK
@@ -63,7 +63,7 @@ cmake --install build --config Release --prefix install
 ```
 
 `examples/cpp/main.cpp` uses the same kernel directly from C++17. A downstream
-project consumes either an installed SDK or a downloaded SDK archive:
+project consumes the installed SDK:
 
 ```cmake
 find_package(myproject 0.1 CONFIG REQUIRED)
@@ -71,12 +71,13 @@ add_executable(app main.cpp)
 target_link_libraries(app PRIVATE myproject::myproject)
 ```
 
-Configure the consumer with `-DCMAKE_PREFIX_PATH=/path/to/unpacked-sdk`.
-Published SDKs contain headers, a Release shared library, CMake package files,
-licenses and the OpenMP runtime. On Windows, put the SDK `bin` directory on PATH
+Configure the consumer with `-DCMAKE_PREFIX_PATH=/path/to/install`.
+The installed SDK contains headers, the C++ library, CMake package files and
+licenses. Enable runtime bundling as described below to include OpenMP.
+On Windows, put the SDK `bin` directory on PATH
 or deploy its DLLs next to the application. Linux and macOS libraries resolve
 the bundled OpenMP runtime relative to themselves. C++ SDK binaries require a
-compatible compiler ABI and platform C/C++ runtime. Linux SDKs use Ubuntu 24.04
+compatible compiler ABI and platform C/C++ runtime. CI builds Linux SDKs on Ubuntu 24.04
 (glibc 2.39); portable Python wheels use manylinux_2_28 instead.
 
 `-DMYPROJECT_BUNDLE_OPENMP=ON` bundles the shared SDK's runtime during install.
@@ -106,7 +107,7 @@ scikit-build-core so the standalone C++ SDK and Python extension share targets.
 
 ## CI and tag releases
 
-Every main push and pull request builds and tests all release artifacts:
+Every main push and pull request verifies the template's build and export paths:
 
 | Platform | SDK | CPython wheels |
 | --- | --- | --- |
@@ -126,10 +127,13 @@ The source distribution is unpacked, built, installed and tested separately.
 To release, update the versions in `CMakeLists.txt` and `pyproject.toml`, wait
 for main CI to pass, then push the matching `vX.Y.Z` tag on a main commit. The
 tag pipeline repeats verification, checks version consistency and main ancestry,
-and publishes 5 SDK archives, 25 wheels, the source archive and SHA256SUMS to
-GitHub Releases. Publishing depends on every build/test job succeeding. It does
-not publish to PyPI. The GitHub Actions token needs repository contents write
-permission only in the publication job.
+and publishes version notes to GitHub Releases after every build/test job succeeds.
+This template does not upload wheels, SDKs or source distributions as CI or
+Release assets, and does not publish to PyPI. Build outputs stay within the CI
+jobs that test them. GitHub supplies its usual source-code downloads for tags.
+The GitHub Actions token needs repository contents write permission only in the
+release-notes job. Projects created from the template can add artifact publishing
+when they have useful binaries to distribute.
 
 ## Reuse this template
 
