@@ -19,9 +19,9 @@ relationships. Platform C libraries and the C++ standard library are not
 replaced by this project. The C++ SDK is specific to the named platform,
 architecture and compiler ABI; it is not a cross-toolchain binary interface.
 
-
 ## GNU General Public License v3
 
+```text
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
@@ -696,9 +696,11 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <http://www.gnu.org/philosophy/why-not-lgpl.html>.
+```
 
 ## GCC Runtime Library Exception 3.1
 
+```text
 GCC RUNTIME LIBRARY EXCEPTION
 
 Version 3.1, 31 March 2009
@@ -771,9 +773,11 @@ consistent with the licensing of the Independent Modules.
 The availability of this Exception does not imply any general
 presumption that third-party software is unaffected by the copyleft
 requirements of the license of GCC.
+```
 
 ## LLVM OpenMP license
 
+```text
 ==============================================================================
 The LLVM Project is under the Apache License v2.0 with LLVM Exceptions:
 ==============================================================================
@@ -1135,3 +1139,4 @@ conditions of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
 PARTICULAR PURPOSE.
 
 ==============================================================================
+```
