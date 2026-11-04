@@ -19,6 +19,9 @@ def revision(ref):
     return subprocess.check_output(["git", "rev-parse", ref], text=True).strip()
 
 if create_tag:
+    subprocess.run(["git", "fetch", "origin", "main"], check=True)
+    if revision("HEAD") != revision("origin/main"):
+        raise RuntimeError("Release candidate was superseded on main")
     subject = subprocess.check_output(["git", "log", "-1", "--format=%s"], text=True).strip()
     if subject != f"Release {tag}":
         raise RuntimeError("Release commit subject disagrees with project version")
