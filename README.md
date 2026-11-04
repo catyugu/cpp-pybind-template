@@ -152,4 +152,4 @@ orchestration in the package. Keep OpenMP runtime repair and installed-consumer
 tests when replacing the example with your own parallel code.
 
 Project code: MIT. Bundled runtime terms and full open-source license texts are
-in `licenses/` and accompany binary packages.
+in `THIRD_PARTY_NOTICES.md` and accompany exported SDKs and wheels.

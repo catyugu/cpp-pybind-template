@@ -64,7 +64,7 @@ if(MYPROJECT_INSTALL_SDK)
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-    install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/myproject)
+    install(FILES LICENSE THIRD_PARTY_NOTICES.md DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/myproject)
     include(CMakePackageConfigHelpers)
     configure_package_config_file(cmake/myprojectConfig.cmake.in
         ${PROJECT_BINARY_DIR}/myprojectConfig.cmake
@@ -77,7 +77,6 @@ if(MYPROJECT_INSTALL_SDK)
         ${PROJECT_BINARY_DIR}/myprojectConfigVersion.cmake
         cmake/myprojectOpenMP.cmake
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/myproject)
-    install(DIRECTORY licenses/ DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/myproject)
     if(MYPROJECT_BUNDLE_OPENMP)
         file(GLOB _omp_redist "$ENV{VCToolsRedistDir}/x64/Microsoft.VC*.OpenMP")
         configure_file(cmake/BundleOpenMP.cmake.in ${PROJECT_BINARY_DIR}/BundleOpenMP.cmake @ONLY)

@@ -9,7 +9,7 @@ description = "C++17, pybind11 and OpenMP mixed-project template"
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE", "licenses/*"]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 dependencies = ["numpy>=1.23"]
 
 [project.optional-dependencies]
